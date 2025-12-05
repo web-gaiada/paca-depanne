@@ -1,12 +1,11 @@
-const BASE_FR_PATH = '';
-// const BASE_EN_PATH_PREFIX = '/paca-depanne/en/';
+const BASE_FR_PATH = '/fr/'; 
 
 /**
- * @param {string} 
- * @param {string}
- * @param {string}
- * @param {string}
- * @param {string}
+ * @param {string} basePath
+ * @param {string} href
+ * @param {string} text
+ * @param {string} pageName
+ * @param {string} activePage
  * @returns {string}
  */
 function getNavLink(basePath, href, text, pageName, activePage) {
@@ -15,8 +14,8 @@ function getNavLink(basePath, href, text, pageName, activePage) {
     const activeClass = (cleanPageName === cleanActivePage)
         ? 'bg-primary text-primary-foreground'
         : 'text-foreground hover:bg-muted';
-
-    const absoluteHref = `${BASE_FR_PATH}$ `;
+    
+    const absoluteHref = `${BASE_FR_PATH}${href}`;
 
     return `
         <a href="${absoluteHref}" class="px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeClass}">${text}</a>
@@ -24,11 +23,12 @@ function getNavLink(basePath, href, text, pageName, activePage) {
 }
 
 /**
- * @param {string}
- * @param {string}
+ * @param {string} activePage
+ * @param {string} rootPath
  * @returns {string}
  */
 function getLangSwitchPath(activePage, rootPath) {
+    const ABSOLUTE_ROOT_PATH = '/';      
     let enPageSlug = '';
 
     switch (activePage.toLowerCase()) {
@@ -46,15 +46,15 @@ function getLangSwitchPath(activePage, rootPath) {
             enPageSlug = 'plumbing/index.html';
             break;
         case 'privacy':
-            enPageSlug = 'privacy-policy/index.html';
+            enPageSlug = 'privacy-policy.html';
             break;
         case 'legal':
-            enPageSlug = 'legal-notice/index.html';
+            enPageSlug = 'legal-notice.html';
             break;
         default:
             enPageSlug = 'index.html';
     }
-    return `${BASE_EN_PATH_PREFIX}${enPageSlug}`;
+    return `${ABSOLUTE_ROOT_PATH}en/${enPageSlug}`;
 }
 
 /**
@@ -84,12 +84,12 @@ function loadHeaderFR(currentPagePath, activePage) {
                         </nav>
                     </div>
                     
-                    // <div class="flex items-center space-x-4">
-                    //     <a href="${enSwitchHref}" 
-                    //         class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors border border-primary bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 rounded-md">
-                    //         EN
-                    //     </a>
-                    // </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="${enSwitchHref}" 
+                            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors border border-primary bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 rounded-md">
+                            EN
+                        </a>
+                    </div>
 
                     <button id="burger-button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-transparent shadow-sm active:bg-accent active:text-accent-foreground h-9 w-9 md:hidden" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="radix-:r0R4:" data-state="closed">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu w-6 h-6 text-foreground" aria-hidden="true"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path></svg>
@@ -106,6 +106,3 @@ function loadHeaderFR(currentPagePath, activePage) {
         console.error("Element with ID 'header-placeholder' not found. Header failed to load.");
     }
 }
-
-
-
