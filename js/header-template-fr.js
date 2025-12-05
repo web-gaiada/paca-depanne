@@ -77,10 +77,10 @@ function loadHeaderFR(currentPagePath, activePage) {
                     
                     <div class="hidden md:flex flex-1 justify-center">
                         <nav class="flex items-center space-x-1"> 
-                            ${getNavLink('', 'index.html', 'Accueil', 'accueil', activePage)}
-                            ${getNavLink('', 'climatisation/index.html', 'Climatisation', 'climatisation', activePage)}
-                            ${getNavLink('', 'ventilation/index.html', 'Ventilation', 'ventilation', activePage)}
-                            ${getNavLink('', 'plomberie/index.html', 'Plomberie', 'plomberie', activePage)}
+                            ${getNavLink('index.html', 'Accueil', 'accueil', activePage)}
+                            ${getNavLink('climatisation/index.html', 'Climatisation', 'climatisation', activePage)}
+                            ${getNavLink('ventilation/index.html', 'Ventilation', 'ventilation', activePage)}
+                            ${getNavLink('plomberie/index.html', 'Plomberie', 'plomberie', activePage)}
                         </nav>
                     </div>
                     
@@ -106,4 +106,5 @@ function loadHeaderFR(currentPagePath, activePage) {
         console.error("Element with ID 'header-placeholder' not found. Header failed to load.");
     }
 }
+
 
