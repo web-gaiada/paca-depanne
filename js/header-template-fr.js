@@ -1,4 +1,4 @@
-const BASE_FR_PATH = '/Paca-Depanne/fr/'; 
+const BASE_FR_PATH = '/paca-depanne/fr/'; 
 
 /**
  * @param {string} basePath
@@ -28,7 +28,7 @@ function getNavLink(basePath, href, text, pageName, activePage) {
  * @returns {string}
  */
 function getLangSwitchPath(activePage, rootPath) {
-    const ABSOLUTE_ROOT_PATH = '/Paca-Depanne/';     
+    const ABSOLUTE_ROOT_PATH = '/paca-depanne/';     
     let enPageSlug = '';
 
     switch (activePage.toLowerCase()) {
@@ -97,4 +97,5 @@ function loadHeaderFR(currentPagePath, activePage) {
     } else {
         console.error("Element with ID 'header-placeholder' not found. Header failed to load.");
     }
+
 }
