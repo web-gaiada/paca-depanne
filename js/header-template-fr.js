@@ -1,4 +1,4 @@
-const BASE_FR_PATH = '/paca-depanne/fr/'; 
+const BASE_FR_PATH = 'fr/'; 
 
 /**
  * @param {string} basePath
@@ -28,7 +28,7 @@ function getNavLink(basePath, href, text, pageName, activePage) {
  * @returns {string}
  */
 function getLangSwitchPath(activePage, rootPath) {
-    const ABSOLUTE_ROOT_PATH = '/paca-depanne/';     
+    const ABSOLUTE_ROOT_PATH = '';     
     let enPageSlug = '';
 
     switch (activePage.toLowerCase()) {
@@ -99,3 +99,4 @@ function loadHeaderFR(currentPagePath, activePage) {
     }
 
 }
+
