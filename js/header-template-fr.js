@@ -1,4 +1,4 @@
-const BASE_FR_PATH = 'fr/'; 
+const BASE_FR_PATH = '/paca-depanne/fr/'; 
 
 /**
  * @param {string} basePath
@@ -63,7 +63,7 @@ function getLangSwitchPath(activePage, rootPath) {
  */
 function loadHeaderFR(currentPagePath, activePage) {
     const enSwitchHref = getLangSwitchPath(activePage, '');
-    const homeLinkHref = `${BASE_FR_PATH}`;
+    const homeLinkHref = `${BASE_FR_PATH}index.html`;
 
     const headerHTML = `
         <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-background backdrop-blur-sm border-b border-border shadow-sm">
@@ -99,4 +99,5 @@ function loadHeaderFR(currentPagePath, activePage) {
     }
 
 }
+
 
