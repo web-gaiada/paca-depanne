@@ -1,5 +1,5 @@
-const BASE_FR_PATH = '/paca-depanne/fr/';
-const BASE_EN_PATH_PREFIX = '/paca-depanne/en/';
+const BASE_FR_PATH = '/fr/';
+// const BASE_EN_PATH_PREFIX = '/paca-depanne/en/';
 
 /**
  * @param {string} 
@@ -106,3 +106,4 @@ function loadHeaderFR(currentPagePath, activePage) {
         console.error("Element with ID 'header-placeholder' not found. Header failed to load.");
     }
 }
+
