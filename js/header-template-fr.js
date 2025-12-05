@@ -16,7 +16,7 @@ function getNavLink(basePath, href, text, pageName, activePage) {
         ? 'bg-primary text-primary-foreground'
         : 'text-foreground hover:bg-muted';
 
-    const absoluteHref = `${BASE_FR_PATH}${href}`;
+    const absoluteHref = `${BASE_FR_PATH}$ `;
 
     return `
         <a href="${absoluteHref}" class="px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeClass}">${text}</a>
@@ -106,5 +106,6 @@ function loadHeaderFR(currentPagePath, activePage) {
         console.error("Element with ID 'header-placeholder' not found. Header failed to load.");
     }
 }
+
 
 
