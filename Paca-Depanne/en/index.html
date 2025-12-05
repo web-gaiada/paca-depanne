@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <link rel="alternate" hreflang="fr" href="index.html">
+    <link rel="alternate" hreflang="en" href="index.en.html">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>Paca Dépanne</title>
+    <link rel="icon" type="image/x-icon" href="../assets/icon/Paca_Depanne-logo.ico">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+        }
+        .iframe-outer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            background-color: #E0E0E0;
+        }
+        .iframe-wrapper {
+            width: 100%;
+            height: 100%;
+            margin: 0 auto;
+            /* transform-origin: center top; */
+            flex-shrink: 0;
+        }
+        #dynamicIframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+    <script>
+        // const width = 1920
+        // const height = 1080
+        // const resolutionRatio = width && height ? width / height : 1
+        const pageNameMap = {
+            'home_page': './',
+            'service_AC_detail': './climatisation/',
+            'service_ventilation_detail': './ventilation/',
+            'service_plumbing_detail': './plomberie/'
+        }
+        const allPageIds = ["home_page", "service_AC_detail", "service_ventilation_detail", "service_plumbing_detail"]
+        const allFormatPageIdsMap = {"home_page":"index","service_AC_detail":"climatisation","service_ventilation_detail":"ventilation","service_plumbing_detail":"plomberie"}
+        const IFRAME_MESSAGE_TYPE = {
+            iframeNavigation: 'iframeNavigation',
+        }
+        const safeAddEventListener = function Tc(e, t, r, n = !1) { e.removeEventListener(t, r, n), e.addEventListener(t, r, n) }
+        const processOnclick = (e, t, r) => { if (r) { const n = Ib(t); if (n.methodName && Op(n.methodName, r)) return; e.preventDefault(), e.stopPropagation(); const s = n.args || [], i = (s == null ? void 0 : s.find(u => u)) || ""; i && Pp(i) } }
+        const checkIframeMethod = (e, t) => { try { return typeof t[e] == "function" || typeof t[e] == "function" } catch (r) { return !1 } }
+        const postIframeMessage = (targetPageId) => {
+            window.parent.postMessage({
+                type: IFRAME_MESSAGE_TYPE.iframeNavigation,
+                targetPageId,
+            })
+        }
+        const handleIframeLinkClick = (event) => {
+            const dynamicIframe = document.querySelector('#dynamicIframe')
+            if (!dynamicIframe?.contentWindow) {
+                return
+            }
+            const link = event.target.closest('a')
+            
+            if (link) {
+                const href = link.getAttribute('href')
+                const onclick = link.getAttribute('onclick')
+
+                if (href && href.startsWith('#') && href.length > 1) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    const targetId = href.substring(1);
+                    const targetElement = dynamicIframe.contentDocument.getElementById(targetId);
+                    
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                    return;
+                }
+                
+                else if (href && href !== '#' && !href.startsWith('javascript:')) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    const targetPageId = getKeyByValueObj(allFormatPageIdsMap, href)
+                    if (targetPageId) {
+                        postIframeMessage(targetPageId)
+                    }
+                    return
+                }
+
+                else if (onclick) {
+                    processOnclick(event, onclick, iframe.contentWindow, allFormatPageIdsMap)
+                } else if (href === '#') {
+                    event.preventDefault()
+                    event.stopPropagation() 
+                }
+            }
+        }
+        function stringExt(link) {
+            let s = String(link || '')
+            s = (s.split('#')[0] || '')
+            s = (s.split('?')[0] || '')
+            s = s.trim()
+            s = s.split('/').filter(Boolean).pop() || ''
+            const lower = s.toLowerCase()
+            if (lower.endsWith('.html') || lower.endsWith('.php') || lower.endsWith('.aspx')) {
+                s = s.slice(0, s.lastIndexOf('.'))
+            }
+            return s
+        }
+        function formatHref(href) {
+            if (!href) {
+                return ''
+            }
+            try {
+                const url = new URL(href, window.location.href)
+                const pathname = url.pathname || ''
+                return stringExt(pathname)
+            } catch {
+                return stringExt(href)
+            }
+        }
+        function getKeyByValueObj(obj, value) {
+            const newValue = formatHref(value)
+            const keyFind = Object.keys(obj).find(k => k === newValue)
+            if (keyFind) {
+                return keyFind
+            }
+            return Object.keys(obj).find(k => obj[k] === newValue)
+        }
+        // function setIframeSize(w, h) {
+        //     const currentContainerRadio = w / h
+        //     let widthValue = w
+        //     let heightValue = h
+        //     let zoom = 1
+        //     if (currentContainerRadio > resolutionRatio) {
+        //         widthValue = h * resolutionRatio
+        //         heightValue = h
+        //     } else {
+        //         widthValue = w
+        //         heightValue = w / resolutionRatio
+        //     }
+        //     zoom = width ? widthValue / width : 1
+        //     return {
+        //         width: widthValue / zoom + 'px',
+        //         height: heightValue / zoom + 'px',
+        //         zoom,
+        //     }
+        // }
+        function adjustIframeSize() {
+            const iframeWrapper = document.querySelector(".iframe-wrapper")
+            const { width, height, zoom } = setIframeSize(window.innerWidth, window.innerHeight)
+            iframeWrapper.style.height = height
+            iframeWrapper.style.width = width
+            iframeWrapper.style.transform = 'scale(' + zoom + ')'
+        }
+        function sanitizeFilename(name) {
+            return name.replace(/[\/:*?"<>|]/g, '_')
+        }
+        function handlePostMessage(event) {
+            if (!event.data) {
+                return
+            }
+            const { type, targetPageId } = event.data
+            const targetPageName = pageNameMap[targetPageId]
+            if (type === "iframeNavigation" && targetPageId && targetPageName) {
+                window.location.href = targetPageName
+            }
+        }
+        function setupIframeEvents() {
+            const iframe = document.getElementById('dynamicIframe')
+            if (iframe && iframe.contentWindow && iframe.contentWindow.document) {
+                safeAddEventListener(iframe.contentWindow.document, 'click', handleIframeLinkClick, true)
+            } else {
+                setTimeout(setupIframeEvents, 100)
+            }
+        }
+        window.addEventListener('message', handlePostMessage)
+        window.onload = function() {
+            // adjustIframeSize()
+            setupIframeEvents()
+        }
+        window.onresize = adjustIframeSize
+        window.onunload = () => {
+            window.removeEventListener('message', handlePostMessage)
+        }
+    </script>
+</head>
+<body>
+    <!-- <div class="iframe-outer">
+        <div class="iframe-wrapper">
+            <iframe id="dynamicIframe" srcdoc=' -->
+                <html data-source-file="src/layouts/BaseLayout.astro" data-source-line-start="11" data-source-line-end="21" lang="en">
+                <head data-source-file="src/layouts/BaseLayout.astro" data-source-line-start="12" data-source-line-end="17">
+                    <script>
+                        <!-- Modal Pop Up -->
+                        function setupGalleryModal() {
+                            const modal = document.getElementById("imageModal");
+                            const modalImage = document.getElementById("modalImage");
+                            const modalCaption = document.getElementById("modalCaption");
+                            const closeBtn = document.querySelector(".modal-close-btn");
+                            const galleryContainer = document.querySelector(".grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4");
+
+                            if (!modal || !modalImage || !modalCaption || !closeBtn || !galleryContainer) {
+                                return;
+                            }
+                            const openModal = (src, alt) => {
+                                modalImage.src = src;
+                                modalImage.alt = alt;
+                                modal.style.display = "flex";
+                            };
+
+                            const closeModal = () => {
+                                modal.style.display = "none";
+                            };
+
+                            galleryContainer.addEventListener("click", (event) => {
+                                const button = event.target.closest("button");
+                                
+                                if (button) {
+                                    const img = button.querySelector("img");
+                                    // Pastikan gambar memiliki atribut src
+                                    if (img && img.src) {
+                                        event.preventDefault(); // Hentikan tindakan default (jika ada)
+                                        const { src, alt } = img; // Destructuring untuk mengambil src dan alt
+                                        openModal(src, alt);
+                                    }
+                                }
+                            });
+                            closeBtn.addEventListener("click", closeModal);
+                            modal.addEventListener("click", (event) => {
+                                if (event.target === modal) {
+                                    closeModal();
+                                }
+                            });
+                            document.addEventListener("keydown", (event) => {
+                                if (event.key === "Escape" && modal.style.display === "flex") {
+                                    closeModal();
+                                }
+                            });
+                        }
+                        document.addEventListener("DOMContentLoaded", setupGalleryModal);
+
+                        function setupMobileMenu() {
+                            const burgerButton = document.getElementById("burger-button");
+                            const mobileMenu = document.getElementById("mobile-menu");
+                        
+                            if (burgerButton && mobileMenu) {
+                                burgerButton.addEventListener("click", (event) => {
+                                    event.preventDefault();
+                                    
+                                    const isVisible = mobileMenu.style.display === "flex";
+                                    mobileMenu.style.display = isVisible ? "none" : "flex";
+
+                                    burgerButton.setAttribute("aria-expanded", !isVisible);
+                                });
+                            }
+                        }
+                        document.addEventListener("DOMContentLoaded", setupMobileMenu);
+                        
+                        (function() {                
+                    })();</script>
+                    <meta name="supported-color-schemes" content="light">
+                    <meta name="color-scheme" content="light">
+                    <style>
+                        html {
+                            scroll-behavior: smooth;
+                        }
+                        #testimonial-carousel {
+                            position: relative;
+                            overflow: hidden; 
+                        }
+
+                        #testimonial-container {
+                            display: flex;
+                            height: auto;
+                        }
+
+                        .testimonial-card .rounded-xl {
+                            padding: 2rem;
+                            position: relative;
+                            overflow: hidden;
+                        }
+                        
+                        .testimonial-card {
+                            flex: 0 0 100%;
+                            box-sizing: border-box;
+                            padding: 1rem;
+                            max-width: 100%;
+                        }
+
+                        .testimonial-card .p-6 {
+                            padding-top: 2rem;
+                            padding-bottom: 2rem;
+                            padding-left: 2rem;
+                            padding-right: 2rem;
+                            position: relative;
+                            overflow: hidden;
+                        }
+
+                        .testimonial-card blockquote {
+                            margin-top: 1rem;
+                            margin-bottom: 1rem;
+                            position: relative;
+                            padding-right: 1.5rem;
+                        }
+
+                        .testimonial-card blockquote svg {
+                            width: 2rem;
+                            height: 2rem;
+                            opacity: 0.2;
+                            color: hsl(var(--primary));
+                            z-index: 0;
+                        }
+
+                        .testimonial-card blockquote p {
+                            margin-top: 16px;
+                            position: relative;
+                            z-index: 1;
+                        }
+
+                        .testimonial-card .flex.gap-1.mb-4 {
+                            margin-bottom: 16px;
+                            position: relative;
+                            z-index: 2;
+                        }
+                        .tooltip-container {
+                        }
+                        .tooltip-content {
+                            background-color: hsl(var(--primary));;
+                            color: white;
+                            padding: 8px 12px;
+                            border-radius: 6px;
+                            font-size: 14px;
+                            text-align: left;
+                            white-space: normal;
+                            max-width: 500px;
+                            position: absolute;
+                            bottom: 100%;
+                            left: 50%;
+                            transform: translateX(-50%) translateY(-10px);
+                            z-index: 9999;
+                            opacity: 0;
+                            visibility: hidden;
+                            transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+                        }
+
+                        .tooltip-container:hover .tooltip-content {
+                            opacity: 1;
+                            visibility: visible;
+                            transform: translateX(-50%) translateY(-20px); 
+                        }
+
+                        .tooltip-content::after {
+                            content: "";
+                            position: absolute;
+                            top: 100%;
+                            left: 50%;
+                            margin-left: -5px;
+                            border-width: 5px;
+                            border-style: solid;
+                            border-color: #7DB5D0 transparent transparent transparent;
+                        }
+                        .custom-dropdown-wrapper {
+                            position: relative;
+                            user-select: none;
+                        }
+
+                        .custom-select-trigger {
+                            border: 1px solid var(--border); /* Tetap gunakan border standard Anda */
+                        }
+
+                        .custom-select-menu {
+                            position: absolute;
+                            top: 100%;
+                            left: 0;
+                            width: 100%;
+                            margin-top: 4px;    
+                            background-color: white;
+                            border: 1px solid var(--border);
+                            border-radius: 0.375rem;
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                            z-index: 999;
+                            max-height: 0;
+                            overflow: hidden;
+                            transition: max-height 0.2s ease-out, visibility 0.2s;
+                            visibility: hidden;
+                        }
+
+                        .custom-dropdown-wrapper.open .custom-select-menu {
+                            max-height: 300px;
+                            overflow-y: auto;
+                            visibility: visible;
+                        }
+
+                        .custom-options-list {
+                            list-style: none;
+                            padding: 0;
+                            margin: 0;
+                        }
+
+                        .custom-option-item {
+                            padding: 8px 12px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out;
+                        }
+
+                        .custom-option-item:not(.custom-option-active):hover {
+                            background-color: hsl(var(--muted));
+                        }
+
+                        .custom-option-active {
+                            background-color: hsl(var(--primary));
+                            color: hsl(var(--primary-foreground));
+                            font-weight: 500;
+                            border-radius: 0.25rem;
+                        }
+
+                        .custom-options-list li:first-child.custom-option-active {
+                            border-top-left-radius: 0.25rem;
+                            border-top-right-radius: 0.25rem;
+                        }
+
+                        .custom-options-list li:last-child.custom-option-active {
+                            border-bottom-left-radius: 0.25rem;
+                            border-bottom-right-radius: 0.25rem;
+                        }
+
+                        .active-check {
+                            margin-left: 10px;
+                            font-size: 1em;
+                        }
+                        .hero-heading-size {
+                            font-size: 2,5rem !important;
+                        }
+                        @media (min-width: 768px) {
+                            .hero-heading-size {
+                                font-size: 3.75rem !important;
+                            }
+                        }
+                        .hero-text-size-fix {
+                            font-size: 1rem !important;
+                        }
+                        @media (min-width: 768px) {
+                            .hero-text-size-fix {
+                                font-size: 1.25rem !important;
+                            }
+                        }
+                        section:not(#hero-css) {
+                            padding-top: 64px;
+                            padding-bottom: 0;
+                        }
+                        footer {
+                            margin-top: 64px !important;
+                        }
+                        :target {
+                            scroll-margin-top: 100px;
+                        }
+                        .modal-backdrop {
+                            display: none;
+                            position: fixed;
+                            z-index: 9999;
+                            left: 0;
+                            top: 0;
+                            width: 100%;
+                            height: 100%;
+                            overflow: auto;
+                            background-color: rgba(0,0,0,0.9);
+                            align-items: center;
+                            justify-content: center;
+                        }
+
+                        .modal-content {
+                            margin: auto;
+                            max-width: 90%;
+                            max-height: 90vh;
+                            position: relative;
+                        }
+
+                        .modal-image {
+                            width: auto;
+                            max-width: 100%;
+                            max-height: 85vh;
+                            display: block;
+                            object-fit: contain;
+                        }
+
+                        .modal-close-btn {
+                            display: none;
+                            position: absolute;
+                            top: 10px;
+                            right: 30px;
+                            color: #fff;
+                            font-size: 40px;
+                            font-weight: bold;
+                            transition: 0.3s;
+                            cursor: pointer;
+                            line-height: 1;
+                        }
+
+                        .modal-close-btn:hover,
+                        .modal-close-btn:focus {
+                            color: #bbb;
+                        }
+
+                        .modal-caption {
+                            margin-top: 10px;
+                            color: #f1f1f1;
+                            font-size: 18px;
+                            text-align: center;
+                            padding: 0 40px;
+                        }
+                        .lucide.text-primary, 
+                        .lucide.text-primary-foreground {
+                            stroke: #0a477e !important;
+                        }
+                        :root, html, body { color-scheme: light; }
+                        html { forced-color-adjust: none; }
+                    </style>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <meta name="description" content="HVAC (Heating, Ventilation, Air Conditioning) and plumbing expert in the South-East. Installation, maintenance, and emergency repair.">
+                    <title data-source-file="src/layouts/BaseLayout.astro" data-source-line-start="16" data-source-line-end="16">Paca Dépanne - Climatisation, Ventilation &amp;amp; Plomberie</title>
+                    <link rel="stylesheet" href="../assets/html/39362/home-page.C7U7NeQq.css">
+                    <script src="undefined/holder.js"></script>
+                </head>
+                <body data-source-file="src/layouts/BaseLayout.astro" data-source-line-start="18" data-source-line-end="20">
+                    <div data-source-file="src/pages/home-page.astro" data-source-line-start="18" data-source-line-end="31" class="flex flex-col min-h-screen bg-background">
+                        <style>astro-island,astro-slot,astro-static-slot{display:contents}</style>
+                        <script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).load=e;window.dispatchEvent(new Event("astro:load"));})();</script>
+                        <script>
+                            (function() {
+                                // Deklarasi properti helper
+                                var A = Object.defineProperty;
+                                var g = (i, o, a) => o in i ? A(i, o, {
+                                    enumerable: !0,
+                                    configurable: !0,
+                                    writable: !0,
+                                    value: a
+                                }) : i[o] = a;
+                                // Helper untuk mendefinisikan properti instance (mirip dengan 'd' dari kode sebelumnya)
+                                var d = (i, o, a) => g(i, typeof o != "symbol" ? o + "" : o, a);
+
+                                // --- Logika Deserialisasi Data (Astro Props) ---
+                                {
+                                    // i: Peta tipe data dan fungsi konstruktornya
+                                    let i = {
+                                        0: t => m(t),
+                                        1: t => a(t),
+                                        2: t => new RegExp(t),
+                                        3: t => new Date(t),
+                                        4: t => new Map(a(t)),
+                                        5: t => new Set(a(t)),
+                                        6: t => BigInt(t),
+                                        7: t => new URL(t),
+                                        8: t => new Uint8Array(t),
+                                        9: t => new Uint16Array(t),
+                                        10: t => new Uint32Array(t),
+                                        11: t => 1 / 0 * t // Untuk Infinity
+                                    },
+                                    // o: Fungsi yang mengambil [tipe, data] dan mengembalikan nilai yang dideserialisasi
+                                    o = t => {
+                                        let [l, e] = t;
+                                        return l in i ? i[l](e) : void 0
+                                    },
+                                    // a: Fungsi yang memetakan array nilai yang dideserialisasi
+                                    a = t => t.map(o),
+                                    // m: Fungsi untuk mendeserialisasi objek (misalnya Props)
+                                    m = t => typeof t != "object" || t === null ? t : Object.fromEntries(Object.entries(t).map(([l, e]) => [l, o(e)]));
+
+                                    // --- Definisi Elemen Kustom Astro Island ---
+                                    class y extends HTMLElement {
+                                        constructor() {
+                                            super(...arguments);
+                                            d(this, "Component");
+                                            d(this, "hydrator");
+
+                                            d(this, "hydrate", async () => {
+                                                var b;
+                                                // Jika hydrator belum dimuat atau elemen tidak terhubung, hentikan.
+                                                if (!this.hydrator || !this.isConnected) return;
+                                                
+                                                // Cek apakah ada parent Astro Island yang membutuhkan hidrasi terlebih dahulu.
+                                                let e = (b = this.parentElement) == null ? void 0 : b.closest("astro-island[ssr]");
+                                                if (e) {
+                                                    e.addEventListener("astro:hydrate", this.hydrate, {
+                                                        once: !0
+                                                    });
+                                                    return
+                                                }
+                                                
+                                                let c = this.querySelectorAll("astro-slot"),
+                                                    n = {},
+                                                    h = this.querySelectorAll("template[data-astro-template]");
+
+                                                // Kumpulkan konten slot dari template
+                                                for (let r of h) {
+                                                    let s = r.closest(this.tagName);
+                                                    s != null && s.isSameNode(this) && (n[r.getAttribute("data-astro-template") || "default"] = r.innerHTML, r.remove())
+                                                }
+
+                                                // Kumpulkan konten slot dari elemen astro-slot
+                                                for (let r of c) {
+                                                    let s = r.closest(this.tagName);
+                                                    s != null && s.isSameNode(this) && (n[r.getAttribute("name") || "default"] = r.innerHTML)
+                                                }
+
+                                                let p;
+                                                // Parsing props dari atribut 'props'
+                                                try {
+                                                    p = this.hasAttribute("props") ? m(JSON.parse(this.getAttribute("props"))) : {}
+                                                } catch (r) {
+                                                    let s = this.getAttribute("component-url") || "<unknown>",
+                                                        v = this.getAttribute("component-export");
+                                                    throw v && (s += ` (export ${v})`), console.error(`[hydrate] Error parsing props for component ${s}`, this.getAttribute("props"), r), r
+                                                }
+                                                let u;
+                                                
+                                                // Memanggil hydrator (misal: React/Vue renderer) untuk me-render komponen di sisi klien
+                                                await this.hydrator(this)(this.Component, p, n, {
+                                                    client: this.getAttribute("client")
+                                                }), this.removeAttribute("ssr"), this.dispatchEvent(new CustomEvent("astro:hydrate"))
+                                            });
+
+                                            d(this, "unmount", () => {
+                                                this.isConnected || this.dispatchEvent(new CustomEvent("astro:unmount"))
+                                            })
+                                        }
+
+                                        disconnectedCallback() {
+                                            document.removeEventListener("astro:after-swap", this.unmount), document.addEventListener("astro:after-swap", this.unmount, {
+                                                once: !0
+                                            })
+                                        }
+
+                                        connectedCallback() {
+                                            // Cek: apakah children sudah dimuat atau page sudah interaktif
+                                            if (!this.hasAttribute("await-children") || document.readyState === "interactive" || document.readyState === "complete") this.childrenConnectedCallback();
+                                            else {
+                                                // Jika perlu menunggu anak dimuat (digunakan dalam streaming/SSR lanjutan)
+                                                let e = () => {
+                                                        document.removeEventListener("DOMContentLoaded", e), c.disconnect(), this.childrenConnectedCallback()
+                                                    },
+                                                    // MutationObserver untuk mendeteksi penanda akhir streaming ("astro:end")
+                                                    c = new MutationObserver(() => {
+                                                        var n;
+                                                        ((n = this.lastChild) == null ? void 0 : n.nodeType) === Node.COMMENT_NODE && this.lastChild.nodeValue === "astro:end" && (this.lastChild.remove(), e())
+                                                    });
+                                                c.observe(this, {
+                                                    childList: !0
+                                                }), document.addEventListener("DOMContentLoaded", e)
+                                            }
+                                        }
+
+                                        async childrenConnectedCallback() {
+                                            let e = this.getAttribute("before-hydration-url");
+                                            // Memuat skrip sebelum hidrasi jika ada
+                                            e && await import(e), this.start()
+                                        }
+
+                                        async start() {
+                                            let e = JSON.parse(this.getAttribute("opts")),
+                                                c = this.getAttribute("client");
+                                                
+                                            // Jika runtime client (misal: Astro.react, Astro.vue) belum dimuat
+                                            if (Astro[c] === void 0) {
+                                                window.addEventListener(`astro:${c}`, () => this.start(), {
+                                                    once: !0
+                                                });
+                                                return
+                                            }
+                                            
+                                            try {
+                                                await Astro[c](async () => {
+                                                    let n = this.getAttribute("renderer-url"),
+                                                        // Memuat komponen dan renderer secara paralel
+                                                        [h, {
+                                                            default: p
+                                                        }] = await Promise.all([import(this.getAttribute("component-url")), n ? import(n) : () => () => {}]),
+                                                        u = this.getAttribute("component-export") || "default";
+
+                                                    // Menentukan Component berdasarkan export (default atau named export)
+                                                    if (!u.includes(".")) this.Component = h[u];
+                                                    else {
+                                                        this.Component = h;
+                                                        for (let f of u.split(".")) this.Component = this.Component[f]
+                                                    }
+                                                    
+                                                    // Menetapkan hydrator dan mengembalikan metode hydrate
+                                                    return this.hydrator = p, this.hydrate
+                                                }, e, this)
+                                            } catch (n) {
+                                                console.error(`[astro-island] Error hydrating ${this.getAttribute("component-url")}`, n)
+                                            }
+                                        }
+
+                                        attributeChangedCallback() {
+                                            this.hydrate()
+                                        }
+                                    }
+                                    d(y, "observedAttributes", ["props"]), customElements.get("astro-island") || customElements.define("astro-island", y)
+                                }
+                            })();
+</script>
+                            <div id="header-placeholder"></div>
+                            <script src="../js/header-template-en.js"></script>
+                            <script>
+                                loadHeaderEN("", "index");
+                            </script>
+                            <nav id="mobile-menu" 
+                                style="display:none; margin-top: 64px !important;" 
+                                class="md:hidden flex-col bg-background/95 border-b border-border shadow-md fixed w-full z-50 p-4 space-y-2 top-0">
+                                <a href="../index.html" class="block px-4 py-2 text-sm font-medium bg-primary text-primary-foreground">Accueil</a>
+                                <a href="../climatisation/" class="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">Climatisation</a>
+                                <a href="../ventilation/" class="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">Ventilation</a>
+                                <a href="../plomberie/" class="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">Plomberie</a>
+                            </nav>
+                        
+                        <main data-source-file="src/pages/home-page.astro" data-source-line-start="21" data-source-line-end="28" class="flex-1">
+                                <section id="hero-css" class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="7" data-source-line-end="82">
+                                    <div class="absolute inset-0 z-0" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="9" data-source-line-end="16">
+                                        <img src="../assets/images/home/home-hero.webp" alt="HVAC Services Background" class="w-full h-full object-cover" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="10" data-source-line-end="14">
+                                        <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="15" data-source-line-end="15"></div>
+                                    </div>
+                                    <div class="relative z-10 container-custom" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="19" data-source-line-end="76">
+                                        <div class="max-w-2xl" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="20" data-source-line-end="75">
+                                            <div class="mb-6 flex items-center gap-2" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="21" data-source-line-end="26">
+                                                <div class="h-1 w-12 bg-primary rounded-full" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="22" data-source-line-end="22"></div>
+                                                <span class="text-primary font-semibold uppercase tracking-wider text-sm" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="23" data-source-line-end="25">HVAC & Plumbing Expertise</span>
+                                            </div>
+                                            <h1 class="hero-heading-size font-bold text-white mb-6 leading-tight" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="28" data-source-line-end="30">Your Thermal Comfort, Our Priority</h1>
+                                            <p class="hero-text-size-fix text-gray-200 mb-8 leading-relaxed max-w-xl" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="32" data-source-line-end="34">Air conditioning, ventilation, and plumbing: complete solutions for your home or business in the PACA region. Installation, maintenance, and 24/7 repair.</p>
+                                            <div class="flex flex-col sm:flex-row gap-4" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="36" data-source-line-end="52">
+                                                <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;amp;_svg]:pointer-events-none [&amp;amp;_svg]:size-4 [&amp;amp;_svg]:shrink-0 shadow h-10 rounded-md px-8 bg-primary hover:bg-accent text-white" data-source-file="src/components/ui/button.tsx" data-source-line-start="47" data-source-line-end="51">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone w-5 h-5 mr-2" aria-hidden="true" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="38" data-source-line-end="38"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"></path></svg>Request a Quote
+                                                </button>
+                                                <a href="#services" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="47" data-source-line-end="50" class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;amp;_svg]:pointer-events-none [&amp;amp;_svg]:size-4 [&amp;amp;_svg]:shrink-0 border bg-transparent shadow-sm hover:text-accent-foreground h-10 rounded-md px-8 border-white text-white hover:bg-white/10">
+                                                    Discover our Services
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down w-5 h-5 ml-2" aria-hidden="true" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="49" data-source-line-end="49"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></a>
+                                            </div>
+                                            <div class="mt-6 flex flex-row flex-wrap gap-4 sm:gap-8" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="55" data-source-line-end="74">
+                                                <div class="flex items-center gap-3" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="56" data-source-line-end="64">
+                                                    <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="57" data-source-line-end="59">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-6 h-6 text-primary" aria-hidden="true" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="58" data-source-line-end="58"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg></div>
+                                                    <div data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="60" data-source-line-end="63">
+                                                        <p class="font-semibold text-white" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="61" data-source-line-end="61">QualiPAC Certified</p>
+                                                        <p class="text-sm text-gray-300" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="62" data-source-line-end="62">RGE & Refrigerant Fluids</p>
+                                                    </div>
+                                                    <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="66" data-source-line-end="68">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock w-6 h-6 text-primary" aria-hidden="true" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="67" data-source-line-end="67"><path d="M12 6v6l4 2"></path><circle cx="12" cy="12" r="10"></circle></svg></div>
+                                                    <div data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="69" data-source-line-end="72">
+                                                        <p class="font-semibold text-white" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="70" data-source-line-end="70">24/7 Emergency Repair</p>
+                                                        <p class="text-sm text-gray-300" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="71" data-source-line-end="71">Rapid Intervention</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10 animate-bounce" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="79" data-source-line-end="81">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down w-6 h-6 text-white" aria-hidden="true" data-source-file="src/components/home-page/HeroSection.tsx" data-source-line-start="80" data-source-line-end="80"><path d="m6 9 6 6 6-6"></path></svg></div>
+                                </section>
+                            
+                                <section id="services" class="md:py-28 bg-background" data-source-file="src/components/home-page/ServicePreviewGrid.tsx" data-source-line-start="13" data-source-line-end="52">
+                                    <div class="container-custom" data-source-file="src/components/home-page/ServicePreviewGrid.tsx" data-source-line-start="14" data-source-line-end="51">
+                                        <div class="text-center mb-16" data-source-file="src/components/home-page/ServicePreviewGrid.tsx" data-source-line-start="16" data-source-line-end="30">
+                                            <div class="inline-flex items-center gap-2 mb-4" data-source-file="src/components/home-page/ServicePreviewGrid.tsx" data-source-line-start="17" data-source-line-end="23">
+                                                <div class="h-1 w-8 bg-primary rounded-full" data-source-file="src/components/home-page/ServicePreviewGrid.tsx" data-source-line-start="18" data-source-line-end="18"></div>
+                                                <span class="text-primary font-semibold uppercase tracking-wider text-sm" data-source-file="src/components/home-page/ServicePreviewGrid.tsx" data-source-line-start="19" data-source-line-end="21">Our Services</span>
+                                                <div class="h-1 w-8 bg-primary rounded-full" data-source-file="src/components/home-page/ServicePreviewGrid.tsx" data-source-line-start="22" data-source-line-end="22"></div>
+                                            </div>
+                                            <h2 class="text-4xl md:text-5xl font-bold mb-4" data-source-file="src/components/home-page/ServicePreviewGrid.tsx" data-source-line-start="24" data-source-line-end="26">Complete HVAC & Plumbing Solutions</h2>
+                                            <p class="text-lg text-muted-foreground max-w-2xl mx-auto" data-source-file="src/components/home-page/ServicePreviewGrid.tsx" data-source-line-start="27" data-source-line-end="29">Discover our three areas of expertise and the process we follow to guarantee your satisfaction.</p>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" data-source-file="src/components/home-page/ServicePreviewGrid.tsx" data-source-line-start="33" data-source-line-end="50">
+                                            
+                                            <div class="rounded-xl border bg-card text-card-foreground shadow group hover:shadow-card transition-all duration-300 overflow-hidden h-full flex flex-col" data-source-file="src/components/ui/card.tsx" data-source-line-start="9" data-source-line-end="16">
+                                                <div class="relative h-48 overflow-hidden" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="25" data-source-line-end="35">
+                                                    <img src="../assets/images/home/cvc-home.webp" alt="Air Conditioning & Heating (HVAC)" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="26" data-source-line-end="30">
+                                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="31" data-source-line-end="31"></div>
+                                                    <div class="absolute bottom-4 left-4 w-12 h-12 rounded-lg bg-primary flex items-center justify-center" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="32" data-source-line-end="34">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-snowflake w-6 h-6 text-primary-foreground" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="33" data-source-line-end="33"><path d="m10 20-1.25-2.5L6 18"></path><path d="M10 4 8.75 6.5 6 6"></path><path d="m14 20 1.25-2.5L18 18"></path><path d="m14 4 1.25 2.5L18 6"></path><path d="m17 21-3-6h-4"></path><path d="m17 3-3 6 1.5 3"></path><path d="M2 12h6.5L10 9"></path><path d="m20 10-1.5 2 1.5 2"></path><path d="M22 12h-6.5L14 15"></path><path d="m4 10 1.5 2L4 14"></path><path d="m7 21 3-6-1.5-3"></path><path d="m7 3 3 6h4"></path></svg></div>
+                                                </div>
+                                                <div class="flex flex-col space-y-1.5 p-6" data-source-file="src/components/ui/card.tsx" data-source-line-start="24" data-source-line-end="28">
+                                                    <div class="font-semibold tracking-tight text-2xl" data-source-file="src/components/ui/card.tsx" data-source-line-start="36" data-source-line-end="40">Climatisation &amp;amp; Chauffage (CVC)</div>
+                                                    <div class="text-muted-foreground text-base" data-source-file="src/components/ui/card.tsx" data-source-line-start="48" data-source-line-end="52">Installation, maintenance and troubleshooting of all air conditioning systems (reversible, heat pump) guaranteeing your thermal comfort all year round.</div>
+                                                </div>
+                                                <div class="p-6 pt-0 flex-1 flex flex-col" data-source-file="src/components/ui/card.tsx" data-source-line-start="60" data-source-line-end="60">
+                                                    <div class="mb-6 flex-1" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="43" data-source-line-end="55">
+                                                        <h4 class="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="44" data-source-line-end="46">Our Process</h4>
+                                                        <ul class="space-y-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="47" data-source-line-end="54">
+                                                            <li class="flex items-start gap-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="49" data-source-line-end="52">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-5 h-5 text-primary mt-0.5 flex-shrink-0" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="50" data-source-line-end="50"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="51" data-source-line-end="51">Audit and Quote</span>
+                                                            </li>
+                                                            <li class="flex items-start gap-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="49" data-source-line-end="52">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-5 h-5 text-primary mt-0.5 flex-shrink-0" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="50" data-source-line-end="50"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="51" data-source-line-end="51">Certified Installation</span>
+                                                            </li>
+                                                            <li class="flex items-start gap-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="49" data-source-line-end="52">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-5 h-5 text-primary mt-0.5 flex-shrink-0" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="50" data-source-line-end="50"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="51" data-source-line-end="51">Maintenance</span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                    <a href="../climatisation/" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="58" data-source-line-end="61" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;amp;_svg]:pointer-events-none [&amp;amp;_svg]:size-4 [&amp;amp;_svg]:shrink-0 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 w-full group-hover:bg-accent transition-colors">
+                                                        Learn More
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="60" data-source-line-end="60"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="rounded-xl border bg-card text-card-foreground shadow group hover:shadow-card transition-all duration-300 overflow-hidden h-full flex flex-col" data-source-file="src/components/ui/card.tsx" data-source-line-start="9" data-source-line-end="16">
+                                                <div class="relative h-48 overflow-hidden" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="25" data-source-line-end="35">
+                                                    <img src="../assets/images/home/vmc-home.webp" alt="Ventilation (Dual Flow VMC)" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="26" data-source-line-end="30">
+                                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="31" data-source-line-end="31"></div>
+                                                    <div class="absolute bottom-4 left-4 w-12 h-12 rounded-lg bg-primary flex items-center justify-center" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="32" data-source-line-end="34">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wind w-6 h-6 text-primary-foreground" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="33" data-source-line-end="33"><path d="M12.8 19.6A2 2 0 1 0 14 16H2"></path><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"></path><path d="M9.8 4.4A2 2 0 1 1 11 8H2"></path></svg></div>
+                                                </div>
+                                                <div class="flex flex-col space-y-1.5 p-6" data-source-file="src/components/ui/card.tsx" data-source-line-start="24" data-source-line-end="28">
+                                                    <div class="font-semibold tracking-tight text-2xl" data-source-file="src/components/ui/card.tsx" data-source-line-start="36" data-source-line-end="40">Ventilation (Dual Flow VMC)</div>
+                                                    <div class="text-muted-foreground text-base" data-source-file="src/components/ui/card.tsx" data-source-line-start="48" data-source-line-end="52">Improve indoor air quality. We install and maintain high-performance, energy-efficient Mechanical Controlled Ventilation (MCV) systems.</div>
+                                                </div>
+                                                <div class="p-6 pt-0 flex-1 flex flex-col" data-source-file="src/components/ui/card.tsx" data-source-line-start="60" data-source-line-end="60">
+                                                    <div class="mb-6 flex-1" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="43" data-source-line-end="55">
+                                                        <h4 class="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="44" data-source-line-end="46">Notre processus</h4>
+                                                        <ul class="space-y-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="47" data-source-line-end="54">
+                                                            <li class="flex items-start gap-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="49" data-source-line-end="52">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-5 h-5 text-primary mt-0.5 flex-shrink-0" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="50" data-source-line-end="50"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="51" data-source-line-end="51">Air Quality Diagnostic</span>
+                                                            </li>
+                                                            <li class="flex items-start gap-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="49" data-source-line-end="52">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-5 h-5 text-primary mt-0.5 flex-shrink-0" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="50" data-source-line-end="50"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="51" data-source-line-end="51">VMC Selection</span>
+                                                            </li>
+                                                            <li class="flex items-start gap-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="49" data-source-line-end="52">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-5 h-5 text-primary mt-0.5 flex-shrink-0" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="50" data-source-line-end="50"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="51" data-source-line-end="51">Implementation</span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                    <a href="../ventilation/" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="58" data-source-line-end="61" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;amp;_svg]:pointer-events-none [&amp;amp;_svg]:size-4 [&amp;amp;_svg]:shrink-0 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 w-full group-hover:bg-accent transition-colors">
+                                                        En savoir plus
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="60" data-source-line-end="60"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="rounded-xl border bg-card text-card-foreground shadow group hover:shadow-card transition-all duration-300 overflow-hidden h-full flex flex-col" data-source-file="src/components/ui/card.tsx" data-source-line-start="9" data-source-line-end="16">
+                                                <div class="relative h-48 overflow-hidden" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="25" data-source-line-end="35">
+                                                    <img src="../assets/images/home/plumbing-home.webp" alt="General Plumbing" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="26" data-source-line-end="30">
+                                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="31" data-source-line-end="31"></div>
+                                                    <div class="absolute bottom-4 left-4 w-12 h-12 rounded-lg bg-primary flex items-center justify-center" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="32" data-source-line-end="34">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-droplet w-6 h-6 text-primary-foreground" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="33" data-source-line-end="33"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg></div>
+                                                </div>
+                                                <div class="flex flex-col space-y-1.5 p-6" data-source-file="src/components/ui/card.tsx" data-source-line-start="24" data-source-line-end="28">
+                                                    <div class="font-semibold tracking-tight text-2xl" data-source-file="src/components/ui/card.tsx" data-source-line-start="36" data-source-line-end="40">General Plumbing</div>
+                                                    <div class="text-muted-foreground text-base" data-source-file="src/components/ui/card.tsx" data-source-line-start="48" data-source-line-end="52">Emergency repairs (leaks, blocked pipes), installation and complete renovation of your drinking water and sanitary networks and equipment.</div>
+                                                </div>
+                                                <div class="p-6 pt-0 flex-1 flex flex-col" data-source-file="src/components/ui/card.tsx" data-source-line-start="60" data-source-line-end="60">
+                                                    <div class="mb-6 flex-1" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="43" data-source-line-end="55">
+                                                        <h4 class="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="44" data-source-line-end="46">Notre processus</h4>
+                                                        <ul class="space-y-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="47" data-source-line-end="54">
+                                                            <li class="flex items-start gap-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="49" data-source-line-end="52">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-5 h-5 text-primary mt-0.5 flex-shrink-0" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="50" data-source-line-end="50"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="51" data-source-line-end="51">Inspection and Detection</span>
+                                                            </li>
+                                                            <li class="flex items-start gap-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="49" data-source-line-end="52">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-5 h-5 text-primary mt-0.5 flex-shrink-0" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="50" data-source-line-end="50"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="51" data-source-line-end="51">Repair or Renovation</span>
+                                                            </li>
+                                                            <li class="flex items-start gap-2" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="49" data-source-line-end="52">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-5 h-5 text-primary mt-0.5 flex-shrink-0" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="50" data-source-line-end="50"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="51" data-source-line-end="51">Final Control</span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                    <a href="../plomberie/" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="58" data-source-line-end="61" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;amp;_svg]:pointer-events-none [&amp;amp;_svg]:size-4 [&amp;amp;_svg]:shrink-0 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 w-full group-hover:bg-accent transition-colors">
+                                                        En savoir plus
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" aria-hidden="true" data-source-file="src/components/common/ServiceCard.tsx" data-source-line-start="60" data-source-line-end="60"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            
+                            <section class="md:py-28 bg-muted/30">
+                                <div class="container-custom">
+                                    
+                                    <div class="text-center mb-16">
+                                        <div class="inline-flex items-center gap-2 mb-4">
+                                            <div class="h-1 w-8 bg-primary rounded-full"></div>
+                                            <span class="text-primary font-semibold uppercase tracking-wider text-sm">Testimonials</span>
+                                            <div class="h-1 w-8 bg-primary rounded-full"></div>
+                                        </div>
+                                        <h2 class="text-4xl md:text-5xl font-bold mb-4">What our customers say</h2>
+                                        <p class="text-lg text-muted-foreground max-w-2xl mx-auto">Discover the positive feedback from our satisfied customers in the PACA region.</p>
+                                    </div>
+
+                                    <div id="testimonial-carousel" class="relative max-w-3xl mx-auto overflow-hidden">
+                                        <div id="testimonial-container" class="flex transition-transform duration-500 ease-in-out">
+                                            <div class="testimonial-card flex-shrink-0 w-full p-4" style="width: 100%;"> 
+                                                <div class="rounded-xl border bg-card text-card-foreground shadow h-full p-6">
+                                                    <div class="flex gap-1 mb-4">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <blockquote class="mb-6">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"></path><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"></path></svg>
+                                                        <p class="text-muted-foreground italic leading-relaxed">"The installation of the reversible air conditioning was impeccable and very quick. The Paca Dépanne team was professional and very clean. The system works perfectly, we highly recommend them!"</p>
+                                                    </blockquote>
+                                                    <div class="flex items-center gap-3 mt-8">
+                                                        <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">JD</span>
+                                                        <div class="space-y-0">
+                                                            <p class="font-semibold text-foreground">Jean-Pierre D.</p>
+                                                            <p class="text-sm text-muted-foreground">Nice (06)</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="testimonial-card flex-shrink-0 w-full p-4" style="width: 100%;">
+                                                <div class="rounded-xl border bg-card text-card-foreground shadow h-full p-6">
+                                                    <div class="flex gap-1 mb-4">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <blockquote class="mb-6">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"></path><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"></path></svg>
+                                                        <p class="text-muted-foreground italic leading-relaxed">"Very responsive emergency plumbing repair service. Problem solved in less than two hours on a Saturday afternoon. Excellent customer follow-up."</p>
+                                                    </blockquote>
+                                                    <div class="flex items-center gap-3 mt-8">
+                                                        <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">SL</span>
+                                                        <div class="space-y-0">
+                                                            <p class="font-semibold text-foreground">Sophie L.</p>
+                                                            <p class="text-sm text-muted-foreground">Aix-en-Provence (13)</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="testimonial-card flex-shrink-0 w-full p-4" style="width: 100%;">
+                                                <div class="rounded-xl border bg-card text-card-foreground shadow h-full p-6">
+                                                    <div class="flex gap-1 mb-4">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star w-5 h-5 text-yellow-400 fill-yellow-400" aria-hidden="true">
+                                                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <blockquote class="mb-6">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"></path><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"></path></svg>
+                                                        <p class="text-muted-foreground italic leading-relaxed">"Audit and installation of a dual-flow ventilation system for our office. The improvement in air quality is noticeable. High-quality technical work."</p>
+                                                    </blockquote>
+                                                    <div class="flex items-center gap-3 mt-8">
+                                                        <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">MV</span>
+                                                        <div class="space-y-0">
+                                                            <p class="font-semibold text-foreground">Marc V.</p>
+                                                            <p class="text-sm text-muted-foreground">Cannes (06)</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                        
+                                        <div class="flex items-center justify-center gap-4 mt-8">
+                                            <button id="prev-btn" class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-input bg-transparent shadow-sm hover:bg-accent disabled:opacity-50">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left w-5 h-5"><path d="m15 18-6-6 6-6"></path></svg>
+                                            </button>
+                                            <div id="dots-container" class="flex gap-2"></div>
+                                            <button id="next-btn" class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-input bg-transparent shadow-sm hover:bg-accent disabled:opacity-50">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right w-5 h-5"><path d="m9 18 6-6-6-6"></path></svg>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="flex justify-center mt-6">
+                                            <button id="pause-play-btn" class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 rounded-md px-3 text-xs text-muted-foreground">
+                                                <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause w-4 h-4 mr-2"><rect x="14" y="3" width="5" height="18" rx="1"></rect><rect x="5" y="3" width="5" height="18" rx="1"></rect></svg>
+                                                <span id="pause-play-text">Pause</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            
+                            <astro-island uid="7LVXa" prefix="r4" component-url="https://sketchflow-public.s3.us-east-1.amazonaws.com/html/39362/CertificationSection.DNB_DToT.js" component-export="default" renderer-url="https://sketchflow-public.s3.us-east-1.amazonaws.com/html/39362/client.D7lRetXm.js" props="{}" ssr="" client="idle" opts="{&amp;quot;name&amp;quot;:&amp;quot;CertificationSection&amp;quot;,&amp;quot;value&amp;quot;:true}" await-children="">
+                                <section class="md:py-28 bg-background" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="13" data-source-line-end="54">
+                                    <div class="container-custom" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="14" data-source-line-end="53">
+                                        <div class="text-center mb-16" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="16" data-source-line-end="30">
+                                            <div class="inline-flex items-center gap-2 mb-4" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="17" data-source-line-end="23">
+                                                <div class="h-1 w-8 bg-primary rounded-full" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="18" data-source-line-end="18"></div>
+                                                <span class="text-primary font-semibold uppercase tracking-wider text-sm" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="19" data-source-line-end="21">Certifications</span>
+                                                <div class="h-1 w-8 bg-primary rounded-full" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="22" data-source-line-end="22"></div>
+                                            </div>
+                                            <h2 class="text-4xl md:text-5xl font-bold mb-4" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="24" data-source-line-end="26">Certifiés et Reconnus</h2>
+                                            <p class="text-lg text-muted-foreground max-w-2xl mx-auto" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="27" data-source-line-end="29">Nos certifications garantissent notre expertise, notre fiabilité et notre conformité aux normes les plus strictes.</p>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="33" data-source-line-end="45">
+                                            
+                                            <div class="flex flex-col items-center gap-2 p-4 rounded-lg border border-border hover:border-primary transition-colors cursor-pointer group relative tooltip-container" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="25" data-source-line-end="30" data-state="closed">
+                                                <div class="tooltip-content">
+                                                    Guarantees our expertise in the installation of high-performance heat pumps and air conditioning systems.
+                                                </div>
+                                                <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="26" data-source-line-end="28">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award w-8 h-8 text-primary" aria-hidden="true" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="27" data-source-line-end="27"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path><circle cx="12" cy="8" r="6"></circle></svg></div>
+                                                <p class="text-sm font-medium text-center" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="29" data-source-line-end="29">QualiPAC</p>
+                                            </div>
+                                            
+                                            <div class="flex flex-col items-center gap-2 p-4 rounded-lg border border-border hover:border-primary transition-colors cursor-pointer group relative tooltip-container" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="25" data-source-line-end="30" data-state="closed">
+                                                <div class="tooltip-content">
+                                                    Label required for access to state financial aid for energy renovation work.
+                                                </div>
+                                                <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="26" data-source-line-end="28">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-leaf w-8 h-8 text-primary" aria-hidden="true" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="27" data-source-line-end="27"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path></svg></div>
+                                                <p class="text-sm font-medium text-center" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="29" data-source-line-end="29">RGE (Reconnu Garant de l'Environnement)</p>
+                                            </div>
+                                            
+                                            <div class="flex flex-col items-center gap-2 p-4 rounded-lg border border-border hover:border-primary transition-colors cursor-pointer group relative tooltip-container" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="25" data-source-line-end="30" data-state="closed">
+                                                <div class="tooltip-content">
+                                                    Certifies that we are qualified to handle, install and maintain equipment containing refrigerants (essential for air conditioning).
+                                                </div>
+                                                <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="26" data-source-line-end="28">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield w-8 h-8 text-primary" aria-hidden="true" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="27" data-source-line-end="27"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg></div>
+                                                <p class="text-sm font-medium text-center" data-source-file="src/components/common/CertificationBadge.tsx" data-source-line-start="29" data-source-line-end="29">Attestation de Capacité Fluides Frigorigènes</p>
+                                            </div>
+                                        </div>
+                                        <div class="mt-16 p-8 bg-primary/5 border border-primary/20 rounded-lg text-center" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="48" data-source-line-end="52">
+                                            <p class="text-lg text-foreground" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="49" data-source-line-end="51"><span class="font-semibold text-foreground" data-source-file="src/components/home-page/CertificationSection.tsx" data-source-line-start="49" data-source-line-end="49">These certifications</span> guarantee you a quality intervention, in compliance with environmental and safety standards, with access to state financial aid for your energy renovation work.</p>
+                                        </div>
+                                    </div>
+                                </section>
+                            </astro-island>
+                                
+                                <section class="md:py-28 bg-muted/30" data-source-file="src/components/home-page/GallerySection.tsx" data-source-line-start="12" data-source-line-end="34">
+                                    <div class="container-custom" data-source-file="src/components/home-page/GallerySection.tsx" data-source-line-start="13" data-source-line-end="33">
+                                        <div class="text-center mb-16" data-source-file="src/components/home-page/GallerySection.tsx" data-source-line-start="15" data-source-line-end="29">
+                                            <div class="inline-flex items-center gap-2 mb-4" data-source-file="src/components/home-page/GallerySection.tsx" data-source-line-start="16" data-source-line-end="22">
+                                                <div class="h-1 w-8 bg-primary rounded-full" data-source-file="src/components/home-page/GallerySection.tsx" data-source-line-start="17" data-source-line-end="17"></div>
+                                                <span class="text-primary font-semibold uppercase tracking-wider text-sm" data-source-file="src/components/home-page/GallerySection.tsx" data-source-line-start="18" data-source-line-end="20">Gallery</span>
+                                                <div class="h-1 w-8 bg-primary rounded-full" data-source-file="src/components/home-page/GallerySection.tsx" data-source-line-start="21" data-source-line-end="21"></div>
+                                            </div>
+                                            <h2 class="text-4xl md:text-5xl font-bold mb-4" data-source-file="src/components/home-page/GallerySection.tsx" data-source-line-start="23" data-source-line-end="25">Our Achievements</h2>
+                                            <p class="text-lg text-muted-foreground max-w-2xl mx-auto" data-source-file="src/components/home-page/GallerySection.tsx" data-source-line-start="26" data-source-line-end="28">Discover our facilities and services in the PACA region.</p>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" data-source-file="src/components/common/GalleryGrid.tsx" data-source-line-start="31" data-source-line-end="62">
+                                            <button class="relative aspect-square overflow-hidden rounded-lg group cursor-pointer" data-source-file="src/components/common/GalleryGrid.tsx" data-source-line-start="35" data-source-line-end="51" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="radix-:r5R6:" data-state="closed">
+                                                <img src="../assets/images/home/home-gallery-1.webp" alt="Installation extérieure de climatiseur" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" loading="lazy" data-source-file="src/components/common/GalleryGrid.tsx" data-source-line-start="39" data-source-line-end="44">
+                                            </button>
+                                            <button class="relative aspect-square overflow-hidden rounded-lg group cursor-pointer" data-source-file="src/components/common/GalleryGrid.tsx" data-source-line-start="35" data-source-line-end="51" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="radix-:r5Ra:" data-state="closed">
+                                                <img src="../assets/images/home/home-gallery-2.webp" alt="Système de ventilation industrielle" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" loading="lazy" data-source-file="src/components/common/GalleryGrid.tsx" data-source-line-start="39" data-source-line-end="44">
+                                            </button>
+                                            <button class="relative aspect-square overflow-hidden rounded-lg group cursor-pointer" data-source-file="src/components/common/GalleryGrid.tsx" data-source-line-start="35" data-source-line-end="51" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="radix-:r5Re:" data-state="closed">
+                                                <img src="../assets/images/home/home-gallery-3.webp" alt="Intervention plomberie" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" loading="lazy" data-source-file="src/components/common/GalleryGrid.tsx" data-source-line-start="39" data-source-line-end="44">
+                                            </button>
+                                            <button class="relative aspect-square overflow-hidden rounded-lg group cursor-pointer" data-source-file="src/components/common/GalleryGrid.tsx" data-source-line-start="35" data-source-line-end="51" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="radix-:r5Ri:" data-state="closed">
+                                                <img src="../assets/images/home/home-gallery-4.webp" alt="Local technique CVC" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" loading="lazy" data-source-file="src/components/common/GalleryGrid.tsx" data-source-line-start="39" data-source-line-end="44">
+                                            </button>
+                                        </div>
+                                    </div>
+                                </section>
+                            
+                            
+                                <section class="md:py-28 bg-background" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="8" data-source-line-end="61">
+                                    <div class="container-custom" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="9" data-source-line-end="60">
+                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="10" data-source-line-end="59">
+                                            <div data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="12" data-source-line-end="52">
+                                                <div class="inline-flex items-center gap-2 mb-4" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="13" data-source-line-end="18">
+                                                    <div class="h-1 w-8 bg-primary rounded-full" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="14" data-source-line-end="14"></div>
+                                                    <span class="text-primary font-semibold uppercase tracking-wider text-sm" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="15" data-source-line-end="17">Contact Us</span>
+                                                </div>
+                                                <h2 class="text-4xl md:text-5xl font-bold mb-6" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="20" data-source-line-end="22">Ready to Improve Your Comfort?</h2>
+                                                <p class="text-lg text-muted-foreground mb-8" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="24" data-source-line-end="26">Contact us for a free quote or for any questions regarding our air conditioning, ventilation and plumbing services.</p>
+                                                <div class="space-y-6 mb-8" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="29" data-source-line-end="44">
+                                                    <div class="flex items-start gap-4" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="31" data-source-line-end="42">
+                                                        <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="32" data-source-line-end="37">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle w-6 h-6 text-primary" aria-hidden="true" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="33" data-source-line-end="36"><circle cx="12" cy="12" r="10"></circle></svg></div>
+                                                        <div data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="38" data-source-line-end="41">
+                                                            <p class="font-semibold text-foreground" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="39" data-source-line-end="39">Email</p>
+                                                            <p class="text-muted-foreground" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="40" data-source-line-end="40">contact@pacadepanne.fr</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-start gap-4" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="31" data-source-line-end="42">
+                                                        <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="32" data-source-line-end="37">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle w-6 h-6 text-primary" aria-hidden="true" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="33" data-source-line-end="36"><circle cx="12" cy="12" r="10"></circle></svg></div>
+                                                        <div data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="38" data-source-line-end="41">
+                                                            <p class="font-semibold text-foreground" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="39" data-source-line-end="39">Phone</p>
+                                                            <p class="text-muted-foreground" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="40" data-source-line-end="40">+33 4 91 XX XX XX</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex items-start gap-4" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="31" data-source-line-end="42">
+                                                        <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="32" data-source-line-end="37">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle w-6 h-6 text-primary" aria-hidden="true" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="33" data-source-line-end="36"><circle cx="12" cy="12" r="10"></circle></svg></div>
+                                                        <div data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="38" data-source-line-end="41">
+                                                            <p class="font-semibold text-foreground" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="39" data-source-line-end="39">Address</p>
+                                                            <p class="text-muted-foreground" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="40" data-source-line-end="40">Marseille et régions environnantes</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="p-4 bg-primary/5 border border-primary/20 rounded-lg" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="47" data-source-line-end="51">
+                                                    <p class="text-sm text-muted-foreground" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="48" data-source-line-end="50"><span class="font-semibold text-foreground" data-source-file="src/components/home-page/ContactFormSection.tsx" data-source-line-start="49" data-source-line-end="49">Response Time: </span>We respond to all requests within 24 hours.</p>
+                                                </div>
+                                            </div>
+                                            <div class="bg-muted/30 p-8 rounded-lg border border-border" data-source-file="src/components/service-ac-detail/ContactFormSection.tsx" data-source-line-start="46" data-source-line-end="59">
+                                                <h3 class="text-2xl font-bold">Request a Quote</h3>
+                                                <div class="text-sm text-muted-foreground  mb-6" data-source-file="src/components/ui/card.tsx" data-source-line-start="48" data-source-line-end="52">
+                                                    <font dir="auto" style="vertical-align: inherit;">
+                                                        <font dir="auto" style="vertical-align: inherit;">Fill out the form below and we will get back to you quickly.</font>
+                                                    </font>
+                                                </div>
+                                                <div id="contact-form-placeholder">
+                                                    <script src="../js/form-en.js"></script>
+                                                    <script>
+                                                        if (window.initializeContactFormEN) {
+                                                            window.initializeContactFormEN(null);
+                                                        }
+                                                    </script>
+                                                </div>
+                                                <p class="text-sm text-muted-foreground mt-6" data-source-file="src/components/service-ac-detail/ContactFormSection.tsx" data-source-line-start="56" data-source-line-end="58">We respect your privacy. Your data will only be used to contact you regarding your request.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                                
+                        </main>
+                            <div id="footer-placeholder"></div>
+                            <script src="../js/footer-template-en.js"></script>
+                            <script>
+                                    loadFooterEN(""); 
+                            </script>
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const container = document.getElementById('testimonial-container');
+                                    const cards = container ? container.querySelectorAll('.testimonial-card') : [];
+                                    const prevBtn = document.getElementById('prev-btn');
+                                    const nextBtn = document.getElementById('next-btn');
+                                    const dotsContainer = document.getElementById('dots-container');
+                                    const pausePlayBtn = document.getElementById('pause-play-btn');
+                                    
+                                    if (!container || cards.length === 0 || !prevBtn || !nextBtn || !dotsContainer || !pausePlayBtn) {
+                                        console.error("Carousel elements not found or incomplete.");
+                                        return;
+                                    }
+                                    
+                                    let currentIndex = 0;
+                                    const totalCards = cards.length;
+                                    const slideIntervalTime = 5000;
+                                    let slideInterval;
+                                    let isPaused = false;
+
+                                    function updateCarousel(newIndex) {
+                                        if (newIndex < 0) {
+                                            newIndex = totalCards - 1; 
+                                        } else if (newIndex >= totalCards) {
+                                            newIndex = 0; 
+                                        }
+
+                                        currentIndex = newIndex;
+                                        
+                                        const offset = -currentIndex * 100;
+                                        container.style.transform = `translateX(${offset}%)`;
+
+                                        const dots = dotsContainer.querySelectorAll('button');
+                                        dots.forEach((dot, index) => {
+                                            dot.classList.remove('bg-primary', 'w-8');
+                                            dot.classList.add('bg-border');
+                                            if (index === currentIndex) {
+                                                dot.classList.remove('bg-border');
+                                                dot.classList.add('bg-primary', 'w-8');
+                                            }
+                                        });
+                                    }
+
+                                    if (dotsContainer.childElementCount === 0) {
+                                        cards.forEach((_, index) => {
+                                            const dot = document.createElement('button');
+                                            dot.classList.add('w-3', 'h-3', 'rounded-full', 'transition-all', 'bg-border', 'hover:bg-muted-foreground');
+                                            dot.addEventListener('click', () => {
+                                                resetAutoSlide();
+                                                updateCarousel(index);
+                                            });
+                                            dotsContainer.appendChild(dot);
+                                        });
+                                    }
+
+                                    function startAutoSlide() {
+                                        if (slideInterval) clearInterval(slideInterval);
+                                        slideInterval = setInterval(() => {
+                                            updateCarousel(currentIndex + 1);
+                                        }, slideIntervalTime);
+                                    }
+
+                                    function resetAutoSlide() {
+                                        if (!isPaused) {
+                                            clearInterval(slideInterval);
+                                            startAutoSlide();
+                                        }
+                                    }
+
+                                    prevBtn.addEventListener('click', () => {
+                                        resetAutoSlide();
+                                        updateCarousel(currentIndex - 1);
+                                    });
+                                    nextBtn.addEventListener('click', () => {
+                                        resetAutoSlide();
+                                        updateCarousel(currentIndex + 1);
+                                    });
+
+                                    pausePlayBtn.addEventListener('click', () => {
+                                        const pauseIcon = pausePlayBtn.querySelector('#pause-icon');
+                                        const pauseIconSvg = '<svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause w-4 h-4 mr-2"><rect x="14" y="3" width="5" height="18" rx="1"></rect><rect x="5" y="3" width="5" height="18" rx="1"></rect></svg><span id="pause-play-text">Pause</span>';
+                                        const playIconSvg = '<svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play w-4 h-4 mr-2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span id="pause-play-text">Reprendre</span>';
+
+                                        if (pauseIcon) {
+                                            clearInterval(slideInterval);
+                                            pausePlayBtn.innerHTML = playIconSvg;
+                                            isPaused = true;
+                                        } else {
+                                            startAutoSlide();
+                                            pausePlayBtn.innerHTML = pauseIconSvg;
+                                            isPaused = false;
+                                        }
+                                    });                                
+                                    
+                                    updateCarousel(0);
+                                    startAutoSlide(); 
+                                });
+                            </script>
+                    </div>
+                    <div id="imageModal" class="modal-backdrop" style="display: none;">
+                        <div class="modal-content">
+                            <span class="modal-close-btn">&times;</span>
+                            <img id="modalImage" src="" alt="" class="modal-image">
+                            <p id="modalCaption" class="modal-caption"></p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            </iframe>
+        </div>
+    </div>
+    <script>
+        const originalBack = window.history.back
+        const originalForward = window.history.forward
+        const originalGo = window.history.go
+        function isValidNavigation(){
+            if(!window.parent.history.state.back || !window.parent.history.state.back.startsWith('/designPage')){
+                return false
+            }
+            return true
+        }
+        window.history.back = function(...args) {
+            if(!isValidNavigation()){
+                return
+            }
+            return originalBack.apply(this, args);
+        };
+
+        window.history.forward = function(...args) {
+            if(!isValidNavigation()){
+                return
+            }
+            return originalForward.apply(this, args);
+        };
+
+        window.history.go = function(...args) {
+            if(!isValidNavigation()){
+                return
+            }
+            return originalGo.apply(this, args);
+        };
+    </script>
+</body>
+</html>
