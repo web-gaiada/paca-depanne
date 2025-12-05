@@ -106,3 +106,4 @@ function loadHeaderFR(currentPagePath, activePage) {
         console.error("Element with ID 'header-placeholder' not found. Header failed to load.");
     }
 }
+
