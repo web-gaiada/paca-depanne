@@ -1,8 +1,3 @@
-/**
- * Path absolut ke root bahasa Prancis.
- * Di Hosting: /fr/
- * Di Live Server: /fr/
- */
 const BASE_FR_PATH = '/fr/'; 
 
 /**
@@ -20,7 +15,6 @@ function getNavLink(basePath, href, text, pageName, activePage) {
         ? 'bg-primary text-primary-foreground'
         : 'text-foreground hover:bg-muted';
     
-    // Menggabungkan BASE_FR_PATH ('/fr/') dengan href (misal 'climatisation/index.html')
     const absoluteHref = `${BASE_FR_PATH}${href}`;
 
     return `
@@ -34,9 +28,8 @@ function getNavLink(basePath, href, text, pageName, activePage) {
  * @returns {string}
  */
 function getLangSwitchPath(activePage, rootPath) {
-    // Digunakan untuk navigasi bahasa Inggris, masih menggunakan nama folder 
-    // karena ini mungkin merupakan path yang diharapkan oleh struktur bahasa Inggris Anda.
-    const ABSOLUTE_ROOT_PATH = '/Paca-Depanne/';      
+
+    const ABSOLUTE_ROOT_PATH = '/';      
     let enPageSlug = '';
 
     switch (activePage.toLowerCase()) {
@@ -71,7 +64,7 @@ function getLangSwitchPath(activePage, rootPath) {
  */
 function loadHeaderFR(currentPagePath, activePage) {
     const enSwitchHref = getLangSwitchPath(activePage, '');
-    const homeLinkHref = `${BASE_FR_PATH}`; // Hasil: /fr/
+    const homeLinkHref = `${BASE_FR_PATH}`;
 
     const headerHTML = `
         <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-background backdrop-blur-sm border-b border-border shadow-sm">
@@ -106,3 +99,4 @@ function loadHeaderFR(currentPagePath, activePage) {
         console.error("Element with ID 'header-placeholder' not found. Header failed to load.");
     }
 }
+
