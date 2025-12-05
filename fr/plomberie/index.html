@@ -180,10 +180,10 @@
                   adjustIframeSize()
                   setupIframeEvents()
                 }
-                window.onresize = adjustIframeSize
-                window.onunload = () => {
-                  window.removeEventListener('message', handlePostMessage)
-                }
+                // window.onresize = adjustIframeSize
+                // window.onunload = () => {
+                //   window.removeEventListener('message', handlePostMessage)
+                // }
               </script>
                 </head>
                 <!-- <body>
@@ -510,7 +510,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Services de plomberie générale, dépannage d&#39;urgence et rénovation complète par Paca Dépanne">
     <title data-source-file="src/layouts/BaseLayout.astro" data-source-line-start="16" data-source-line-end="16">Plomberie - Paca Dépanne</title>
-  <link rel="stylesheet" href="../../assets/html/39362/home-page.C7U7NeQq.css"><script src="undefined/holder.js"></script></head>
+  <link rel="stylesheet" href="../../assets/html/39362/home-page.C7U7NeQq.css">
+  <!-- <script src="undefined/holder.js"></script> -->
+</head>
   <body data-source-file="src/layouts/BaseLayout.astro" data-source-line-start="18" data-source-line-end="20">
     
   <div data-source-file="src/pages/service-plumbing-detail.astro" data-source-line-start="17" data-source-line-end="32" class="flex flex-col min-h-screen bg-background">
@@ -530,7 +532,7 @@
         window.dispatchEvent(new Event("astro:load"));
     })();
 </script>
-<script>
+<!-- <script>
     (() => {
         var A = Object.defineProperty;
         var g = (i, o, a) => o in i ? A(i, o, {
@@ -661,7 +663,7 @@ attributeChangedCallback() {
 d(y, "observedAttributes", ["props"]), customElements.get("astro-island") || customElements.define("astro-island", y)
 }
 })();
-</script>
+</script> -->
 
     <div id="header-placeholder"></div>
     <script src="../../js/header-template-fr.js"></script>
